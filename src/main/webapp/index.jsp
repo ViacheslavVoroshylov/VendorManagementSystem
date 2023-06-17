@@ -1,7 +1,9 @@
-<%@ page import="com.khai.voroshylov.model.WebConnection" %><%--
+<%@ page import="com.khai.voroshylov.connection.ConnectionDataBase" %>
+<%@ page import="java.util.List" %>
+<%--
   Created by IntelliJ IDEA.
   User: Lenovo
-  Date: 02.04.2023
+  Date: 02.10.2022
   Time: 18:58
   To change this template use File | Settings | File Templates.
 --%>
@@ -15,8 +17,9 @@
 
 <%
 
-    for(String name: WebConnection.getCustomers()){
-        System.out.print(name + "<br/>");
+    List<String> customers = ConnectionDataBase.createConnection();
+    for (String customer : customers) {
+        out.println(customer.replaceAll("\\s", "") + " ");
     }
 
 %>
