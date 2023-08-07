@@ -1,4 +1,4 @@
-package com.khai.voroshylov.dto;
+package com.khai.voroshylov.web.domain;
 
 import lombok.Getter;
 import lombok.Setter;

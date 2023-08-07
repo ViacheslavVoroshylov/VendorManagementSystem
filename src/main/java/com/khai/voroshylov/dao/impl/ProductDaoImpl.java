@@ -2,7 +2,10 @@ package com.khai.voroshylov.dao.impl;
 
 import com.khai.voroshylov.dao.ProductDao;
 import com.khai.voroshylov.dao.mapper.impl.ProductMapper;
+import com.khai.voroshylov.exception.EntityNotFoundException;
 import com.khai.voroshylov.model.Product;
+import com.khai.voroshylov.query.QueryConstant;
+import com.khai.voroshylov.transaction.TransactionManager;
 import org.apache.log4j.Logger;
 
 import java.sql.Connection;
@@ -40,126 +43,133 @@ public class ProductDaoImpl implements ProductDao {
     @Override
     public Product getById(Long id) {
 
-        Product product = null;
-        String sql = "SELECT * FROM management_system.product WHERE id = " + id;
+        return TransactionManager.doInTransaction(connection1 -> {
 
-        try (Statement statement = connection.createStatement()) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryConstant.PRODUCT_GET_BY_ID)) {
 
-            ResultSet resultSet = statement.executeQuery(sql);
+                preparedStatement.setLong(1, id);
+                ResultSet resultSet = preparedStatement.executeQuery(QueryConstant.PRODUCT_GET_BY_ID);
 
-            if (resultSet.next()) {
-                product = productMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    return productMapper.mapRow(resultSet);
+                }
+
+                LOGGER.info("Request get by id is succeeded.");
+
+            } catch (SQLException e) {
+
+                LOGGER.error("Request get by id is failed. " + e.getMessage());
             }
 
-            LOGGER.info("Request get by id is succeeded.");
-
-        } catch (SQLException e) {
-
-            LOGGER.error("Request get by id is failed. " + e);
-        }
-
-        return product;
+            throw new EntityNotFoundException("Customer with id " + id + " not found");
+        });
     }
 
     @Override
     public List<Product> getAll() {
 
-        List<Product> products = new ArrayList<>();
-        String sql = "SELECT * FROM management_system.product";
+        return TransactionManager.doInTransaction(connection1 -> {
 
-        try (Statement statement = connection.createStatement()) {
+            List<Product> products = new ArrayList<>();
 
-            ResultSet resultSet = statement.executeQuery(sql);
+            try (Statement statement = connection.createStatement()) {
 
-            while (resultSet.next()) {
+                ResultSet resultSet = statement.executeQuery(QueryConstant.PRODUCT_GET_ALL);
 
-                products.add(productMapper.mapRow(resultSet));
+                while (resultSet.next()) {
+
+                    products.add(productMapper.mapRow(resultSet));
+                }
+
+                LOGGER.info("Request get all is succeeded.");
+
+            } catch (SQLException e) {
+
+                LOGGER.error("Request get all is failed. " + e.getMessage());
             }
 
-            LOGGER.info("Request get all is succeeded.");
-
-        } catch (SQLException e) {
-
-            LOGGER.error("Request get all is failed. " + e);
-        }
-        return products;
+            return products;
+        });
     }
 
     @Override
     public Product save(Product product) {
 
-        String sql = "INSERT INTO management_system.product (category, name, count, price, supplier) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        return TransactionManager.doInTransaction(connection1 -> {
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (PreparedStatement statement = connection.prepareStatement(QueryConstant.PRODUCT_SAVE)) {
 
-            statement.setObject(1, product.getCategory());
-            statement.setString(2, product.getName());
-            statement.setInt(3, product.getCount());
-            statement.setDouble(4, product.getPrice());
-            statement.setString(5, product.getSupplier());
+                statement.setObject(1, product.getCategory());
+                statement.setString(2, product.getName());
+                statement.setInt(3, product.getCount());
+                statement.setDouble(4, product.getPrice());
+                statement.setString(5, product.getSupplier());
 
-            statement.executeUpdate();
-            ResultSet generatedKeys = statement.getGeneratedKeys();
+                statement.executeUpdate();
+                ResultSet generatedKeys = statement.getGeneratedKeys();
 
-            if (generatedKeys.next()) {
+                if (generatedKeys.next()) {
 
-                product.setId(generatedKeys.getLong(1));
+                    product.setId(generatedKeys.getLong(1));
+                }
+
+                LOGGER.info("Request save is succeeded.");
+
+            } catch (SQLException e) {
+
+                LOGGER.error("Request save is failed. " + e.getMessage());
             }
 
-            LOGGER.info("Request save is succeeded.");
-
-        } catch (SQLException e) {
-
-            LOGGER.error("Request save is failed. " + e);
-        }
-
-        return product;
+            return product;
+        });
     }
 
     @Override
     public Product update(Product product) {
 
-        String sql = "UPDATE management_system.product SET category = ?, name = ?, count = ?, price = ?, supplier = ? WHERE id = ?";
+        return TransactionManager.doInTransaction(connection1 -> {
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (PreparedStatement statement = connection.prepareStatement(QueryConstant.PRODUCT_UPDATE)) {
 
-            statement.setObject(1, product.getCategory());
-            statement.setString(2, product.getName());
-            statement.setInt(3, product.getCount());
-            statement.setDouble(4, product.getPrice());
-            statement.setString(5, product.getSupplier());
-            statement.setLong(6, product.getId());
+                statement.setObject(1, product.getCategory());
+                statement.setString(2, product.getName());
+                statement.setInt(3, product.getCount());
+                statement.setDouble(4, product.getPrice());
+                statement.setString(5, product.getSupplier());
+                statement.setLong(6, product.getId());
 
-            statement.executeUpdate();
+                statement.executeUpdate();
 
-            LOGGER.info("Request update is succeeded.");
+                LOGGER.info("Request update is succeeded.");
 
-        } catch (SQLException e) {
+            } catch (SQLException e) {
 
-            LOGGER.error("Request update is failed. " + e);
-        }
+                LOGGER.error("Request update is failed. " + e.getMessage());
+            }
 
-        return product;
+            return product;
+        });
     }
 
     @Override
     public void deleteById(Long id) {
 
-        String sql = "DELETE FROM management_system.product WHERE id = ?";
+        TransactionManager.doInTransaction(connection1 -> {
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (PreparedStatement statement = connection.prepareStatement(QueryConstant.PRODUCT_DELETE_BY_ID)) {
 
-            statement.setLong(1, id);
-            statement.executeUpdate();
+                statement.setLong(1, id);
+                statement.executeUpdate();
 
-            LOGGER.info("Request delete by id is succeeded.");
+                LOGGER.info("Request delete by id is succeeded.");
 
-        } catch (SQLException e) {
+            } catch (SQLException e) {
 
-            LOGGER.error("Request delete by id is failed. " + e);
-        }
+                LOGGER.error("Request delete by id is failed. " + e.getMessage());
+            }
 
+            return true;
+        });
     }
 
 }

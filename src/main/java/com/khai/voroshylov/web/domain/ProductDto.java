@@ -1,4 +1,4 @@
-package com.khai.voroshylov.dto;
+package com.khai.voroshylov.web.domain;
 
 import com.khai.voroshylov.model.ProductCategory;
 import lombok.Getter;

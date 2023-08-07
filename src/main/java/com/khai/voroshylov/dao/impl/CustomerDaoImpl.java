@@ -2,12 +2,13 @@ package com.khai.voroshylov.dao.impl;
 
 import com.khai.voroshylov.dao.CustomerDao;
 import com.khai.voroshylov.dao.mapper.impl.CustomerMapper;
+import com.khai.voroshylov.exception.EntityNotFoundException;
 import com.khai.voroshylov.model.Customer;
+import com.khai.voroshylov.query.QueryConstant;
+import com.khai.voroshylov.transaction.TransactionManager;
 import org.apache.log4j.Logger;
 
-import java.sql.Connection;
 import java.sql.Date;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,11 +16,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class CustomerDaoImpl implements CustomerDao {
 
     final static Logger LOGGER = Logger.getLogger(CustomerDaoImpl.class);
-    private Connection connection;
 
     CustomerMapper customerMapper = new CustomerMapper();
 
@@ -27,130 +26,133 @@ public class CustomerDaoImpl implements CustomerDao {
     @Override
     public Customer getById(Long id) {
 
+        return TransactionManager.doInTransaction( connection -> {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(QueryConstant.CUSTOMER_GET_BY_ID)) {
 
+                preparedStatement.setLong(1, id);
+                ResultSet resultSet = preparedStatement.executeQuery(QueryConstant.CUSTOMER_GET_BY_ID);
 
-        Customer customer = null;
-        String sql = "SELECT * FROM management_system.customer WHERE id = " + id;
+                if (resultSet.next()) {
+                    return customerMapper.mapRow(resultSet);
+                }
 
-        try (Statement statement = connection.createStatement()) {
+                LOGGER.info("Request get by id is succeeded.");
 
-            ResultSet resultSet = statement.executeQuery(sql);
+            } catch (SQLException e) {
 
-            if (resultSet.next()) {
-                customer = customerMapper.mapRow(resultSet);
+                LOGGER.error("Request get by id is failed. " + e.getMessage());
             }
 
-            LOGGER.info("Request get by id is succeeded.");
+            throw new EntityNotFoundException("Customer with id " + id + " not found");
+        });
 
-        } catch (SQLException e) {
-
-            LOGGER.error("Request get by id is failed. " + e);
-        }
-
-        return customer;
     }
 
     @Override
     public List<Customer> getAll() {
 
-        List<Customer> customers = new ArrayList<>();
-        String sql = "SELECT * FROM management_system.customer";
+        return TransactionManager.doInTransaction(connection -> {
 
-        try (Statement statement = connection.createStatement()) {
+            List<Customer> customers = new ArrayList<>();
 
-            ResultSet resultSet = statement.executeQuery(sql);
+            try (Statement statement = connection.createStatement()) {
 
-            while (resultSet.next()) {
+                ResultSet resultSet = statement.executeQuery(QueryConstant.CUSTOMER_GET_ALL);
 
-                customers.add(customerMapper.mapRow(resultSet));
+                while (resultSet.next()) {
+
+                    customers.add(customerMapper.mapRow(resultSet));
+                }
+
+                LOGGER.info("Request get all is succeeded.");
+
+            } catch (SQLException e) {
+
+                LOGGER.error("Request get all is failed. " + e.getMessage());
             }
 
-            LOGGER.info("Request get all is succeeded.");
-
-        } catch (SQLException e) {
-
-            LOGGER.error("Request get all is failed. " + e);
-        }
-
-        return customers;
+            return customers;
+        });
     }
 
     @Override
     public Customer save(Customer customer) {
 
-        String sql = "INSERT INTO management_system.customer (name, country, city, last_order_date, email, phone, order_count) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        return TransactionManager.doInTransaction(connection -> {
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, customer.getName());
-            statement.setString(2, customer.getCountry());
-            statement.setString(3, customer.getCity());
-            statement.setDate(4, (Date) customer.getLastOrderDate());
-            statement.setString(5, customer.getEmail());
-            statement.setString(6, customer.getPhone());
-            statement.setInt(7, customer.getOrderCount());
+            try (PreparedStatement statement = connection.prepareStatement(QueryConstant.CUSTOMER_SAVE)) {
+                statement.setString(1, customer.getName());
+                statement.setString(2, customer.getCountry());
+                statement.setString(3, customer.getCity());
+                statement.setDate(4, (Date) customer.getLastOrderDate());
+                statement.setString(5, customer.getEmail());
+                statement.setString(6, customer.getPhone());
+                statement.setInt(7, customer.getOrderCount());
 
-            statement.executeUpdate();
-            ResultSet generatedKeys = statement.getGeneratedKeys();
+                statement.executeUpdate();
+                ResultSet generatedKeys = statement.getGeneratedKeys();
 
-            if (generatedKeys.next()) {
+                if (generatedKeys.next()) {
 
-                customer.setId(generatedKeys.getLong(1));
+                    customer.setId(generatedKeys.getLong(1));
+                }
+
+                LOGGER.info("Request save is succeeded.");
+
+            } catch (SQLException e) {
+
+                LOGGER.error("Request save is failed. " + e.getMessage());
             }
 
-            LOGGER.info("Request save is succeeded.");
-
-        } catch (SQLException e) {
-
-            LOGGER.error("Request save is failed. " + e);
-        }
-
-        return customer;
+            return customer;
+        });
     }
 
     @Override
     public Customer update(Customer customer) {
 
-        String sql = "UPDATE management_system.customer SET name = ?, country = ?, city = ?, last_order_date = ?, email = ?, phone = ?, order_count = ? WHERE id = ?";
+        return TransactionManager.doInTransaction(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(QueryConstant.CUSTOMER_UPDATE)) {
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, customer.getName());
+                statement.setString(2, customer.getCountry());
+                statement.setString(3, customer.getCity());
+                statement.setDate(4, (Date) customer.getLastOrderDate());
+                statement.setString(5, customer.getEmail());
+                statement.setString(6, customer.getPhone());
+                statement.setInt(7, customer.getOrderCount());
+                statement.setLong(8, customer.getId());
 
-            statement.setString(1, customer.getName());
-            statement.setString(2, customer.getCountry());
-            statement.setString(3, customer.getCity());
-            statement.setDate(4, (Date) customer.getLastOrderDate());
-            statement.setString(5, customer.getEmail());
-            statement.setString(6, customer.getPhone());
-            statement.setInt(7, customer.getOrderCount());
-            statement.setLong(8, customer.getId());
+                statement.executeUpdate();
 
-            statement.executeUpdate();
+                LOGGER.info("Request update is succeeded.");
 
-            LOGGER.info("Request update is succeeded.");
+            } catch (SQLException e) {
 
-        } catch (SQLException e) {
+                LOGGER.error("Request update is failed. " + e.getMessage());
+            }
 
-            LOGGER.error("Request update is failed. " + e);
-        }
-
-        return customer;
+            return customer;
+        });
     }
 
     @Override
     public void deleteById(Long id) {
 
-        String sql = "DELETE FROM management_system.customer WHERE id = ?";
+        TransactionManager.doInTransaction(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(QueryConstant.CUSTOMER_DELETE_BY_ID)) {
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, id);
+                statement.executeUpdate();
 
-            statement.setLong(1, id);
-            statement.executeUpdate();
+                LOGGER.info("Request delete by id is succeeded.");
 
-            LOGGER.info("Request delete by id is succeeded.");
+            } catch (SQLException e) {
 
-        } catch (SQLException e) {
+                LOGGER.error("Request delete by id is failed. " + e.getMessage());
+            }
 
-            LOGGER.error("Request delete by id is failed. " + e);
-        }
+            return true;
+        });
     }
 }
