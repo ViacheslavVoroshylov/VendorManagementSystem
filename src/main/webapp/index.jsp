@@ -11,6 +11,9 @@
     <title>Title</title>
 </head>
 <body>
-
+<form action="${request.contextPath}/controller" method="post">
+    <input type="hidden" name="command" value="CUSTOMER_PAGE">
+    <button type="submit">Customer page</button>
+</form>
 </body>
 </html>

@@ -16,7 +16,6 @@ public class TransactionManager {
         try (Connection connection = ConnectionDataBase.createConnection()) {
 
             connection.setAutoCommit(false);
-
             result = callback.execute(connection);
             connection.commit();
             log.info("Connection is committed");

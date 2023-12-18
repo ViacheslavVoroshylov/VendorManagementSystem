@@ -14,11 +14,9 @@ public class ConstraintHandler {
     public void validate(Object validateObject) throws Exception {
 
         Map<String, List<String>> errorMap = new HashMap<>();
-
         Validator validator = new Validator();
 
         List<ConstraintViolation> violations = validator.validate(validateObject);
-
 
         if(!violations.isEmpty()) {
 
