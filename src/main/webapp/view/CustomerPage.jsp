@@ -11,6 +11,11 @@
     <title>CustomerPage</title>
 </head>
 <body>
-    CustomerPage
+    Customer page
+
+    <form action="${request.contextPath}/controller" method="post">
+        <input type="hidden" name="command" value="HOME_PAGE">
+        <button type="submit">Home page</button>
+    </form>
 </body>
 </html>

@@ -8,9 +8,14 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
-    <title>Home page</title>
+    <title>Vendor page</title>
 </head>
 <body>
-    Home page
+    Vendor page
+
+    <form action="${request.contextPath}/controller" method="post">
+        <input type="hidden" name="command" value="HOME_PAGE">
+        <button type="submit">Home page</button>
+    </form>
 </body>
 </html>
