@@ -9,5 +9,5 @@ public class CustomerPageCommand implements Command {
     @Override
     public String execute(HttpServletRequest req, HttpServletResponse resp) {
         return "/view/CustomerPage.jsp";
-    } //view/CustomerPage
+    }
 }

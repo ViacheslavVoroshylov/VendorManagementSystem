@@ -11,12 +11,12 @@ import java.io.IOException;
 
 public class FrontController extends HttpServlet {
 
-    public static final String VIEW_FILE_EXTENSION = ".jsp";
+    //public static final String VIEW_FILE_EXTENSION = ".jsp";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String forward = handleRequest(req, resp);
-        req.getRequestDispatcher(forward + VIEW_FILE_EXTENSION).forward(req, resp);
+        req.getRequestDispatcher(forward).forward(req, resp);
     }
 
     @Override
